@@ -1,9 +1,14 @@
+
 import os
 import streamlit as st
 
 from dotenv import load_dotenv
 from pypdf import PdfReader
 from openai import OpenAI
+
+# -------------------
+# Config
+# -------------------
 
 load_dotenv()
 
@@ -13,11 +18,13 @@ client = OpenAI(
 )
 
 st.set_page_config(
-    page_title="AI PDF Chat",
-    page_icon="📄"
+    page_title="AI PDF Assistant",
+    page_icon="📄",
+    layout="wide"
 )
 
-st.title("📄 AI PDF Chat")
+st.title("📄 AI PDF Assistant")
+st.caption("Upload one or more PDFs and chat with them.")
 
 # -------------------
 # Session State
@@ -29,40 +36,80 @@ if "pdf_text" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+if "pdf_loaded" not in st.session_state:
+    st.session_state.pdf_loaded = False
+
 # -------------------
 # Upload PDF
 # -------------------
 
-uploaded_file = st.file_uploader(
-    "Upload PDF",
-    type="pdf"
+uploaded_files = st.file_uploader(
+    "Upload PDFs",
+    type="pdf",
+    accept_multiple_files=True
 )
-
-if uploaded_file:
-
-    pdf = PdfReader(uploaded_file)
+if uploaded_files:
 
     text = ""
 
-    for page in pdf.pages:
+    total_pages = 0
 
-        page_text = page.extract_text()
+    st.sidebar.header("📄 Uploaded PDFs")
 
-        if page_text:
-            text += page_text
+    for uploaded_file in uploaded_files:
+
+        pdf = PdfReader(uploaded_file)
+
+        total_pages += len(pdf.pages)
+
+        st.sidebar.write(
+            f"📄 {uploaded_file.name}"
+        )
+
+        for page in pdf.pages:
+
+            page_text = page.extract_text()
+
+            if page_text:
+                text += "\n\n" + page_text
 
     st.session_state.pdf_text = text
+    st.session_state.pdf_loaded = True
 
-    st.success("PDF Loaded!")
+    st.success(
+        f"✅ {len(uploaded_files)} PDF(s) Loaded Successfully"
+    )
+
+    st.sidebar.markdown("---")
+
+    st.sidebar.write(
+        f"**Total PDFs:** {len(uploaded_files)}"
+    )
+
+    st.sidebar.write(
+        f"**Total Pages:** {total_pages}"
+    )
+
+# -------------------
+# Display Chat History
+# -------------------
+
+for message in st.session_state.messages:
+
+    with st.chat_message(message["role"]):
+
+        st.write(
+            message["content"]
+        )
 
 # -------------------
 # Chat
 # -------------------
 
-if st.session_state.pdf_text:
+if st.session_state.pdf_loaded:
 
     question = st.chat_input(
-        "Ask about the PDF..."
+        "Ask a question about the PDF..."
     )
 
     if question:
@@ -74,30 +121,33 @@ if st.session_state.pdf_text:
             }
         )
 
+        with st.chat_message("user"):
+            st.write(question)
+
         with st.spinner("Thinking..."):
 
-            response = client.chat.completions.create(
-                model="openai/gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "Answer only using the PDF content."
-                        )
-                    },
-                    {
-                        "role": "user",
-                        "content": f"""
+            conversation = [
+                {
+                    "role": "system",
+                    "content": f"""
+You are an AI PDF assistant.
+
+Answer ONLY using the PDF content below.
+
 PDF CONTENT:
 
 {st.session_state.pdf_text[:15000]}
-
-QUESTION:
-
-{question}
 """
-                    }
-                ]
+                }
+            ]
+
+            conversation.extend(
+                st.session_state.messages
+            )
+
+            response = client.chat.completions.create(
+                model="openai/gpt-3.5-turbo",
+                messages=conversation
             )
 
             answer = (
@@ -114,25 +164,16 @@ QUESTION:
             }
         )
 
-# -------------------
-# Display Messages
-# -------------------
-
-for message in st.session_state.messages:
-
-    with st.chat_message(
-        message["role"]
-    ):
-
-        st.write(
-            message["content"]
-        )
+        with st.chat_message("assistant"):
+            st.write(answer)
 
 # -------------------
 # Clear Chat
 # -------------------
 
-if st.button("🗑 Clear Chat"):
+st.sidebar.markdown("---")
+
+if st.sidebar.button("🗑 Clear Chat"):
 
     st.session_state.messages = []
 
