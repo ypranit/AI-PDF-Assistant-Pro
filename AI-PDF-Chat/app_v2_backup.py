@@ -1,11 +1,10 @@
+
 import os
 import streamlit as st
 
 from dotenv import load_dotenv
 from pypdf import PdfReader
 from openai import OpenAI
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from streamlit_mic_recorder import mic_recorder
 
 # -------------------
 # Config
@@ -25,12 +24,7 @@ st.set_page_config(
 )
 
 st.title("📄 AI PDF Assistant")
-st.markdown(
-    """
-Upload one or more PDFs, ask questions,
-compare documents, and chat with your files.
-"""
-)
+st.caption("Upload one or more PDFs and chat with them.")
 
 # -------------------
 # Session State
@@ -45,11 +39,8 @@ if "messages" not in st.session_state:
 if "pdf_loaded" not in st.session_state:
     st.session_state.pdf_loaded = False
 
-if "chunks" not in st.session_state:
-    st.session_state.chunks = []
-
 # -------------------
-# Upload PDFs
+# Upload PDF
 # -------------------
 
 uploaded_files = st.file_uploader(
@@ -57,10 +48,10 @@ uploaded_files = st.file_uploader(
     type="pdf",
     accept_multiple_files=True
 )
-
 if uploaded_files:
 
     text = ""
+
     total_pages = 0
 
     st.sidebar.header("📄 Uploaded PDFs")
@@ -71,7 +62,9 @@ if uploaded_files:
 
         total_pages += len(pdf.pages)
 
-        st.sidebar.write(f"📄 {uploaded_file.name}")
+        st.sidebar.write(
+            f"📄 {uploaded_file.name}"
+        )
 
         for page in pdf.pages:
 
@@ -80,17 +73,7 @@ if uploaded_files:
             if page_text:
                 text += "\n\n" + page_text
 
-    # Chunking
-
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
-    )
-
-    chunks = splitter.split_text(text)
-
     st.session_state.pdf_text = text
-    st.session_state.chunks = chunks
     st.session_state.pdf_loaded = True
 
     st.success(
@@ -98,8 +81,6 @@ if uploaded_files:
     )
 
     st.sidebar.markdown("---")
-
-    st.sidebar.success("🚀 Assistant Ready")
 
     st.sidebar.write(
         f"**Total PDFs:** {len(uploaded_files)}"
@@ -109,14 +90,6 @@ if uploaded_files:
         f"**Total Pages:** {total_pages}"
     )
 
-    st.sidebar.write(
-        f"**Chunks Created:** {len(chunks)}"
-    )
-
-    st.sidebar.write(
-        f"**Characters Loaded:** {len(text):,}"
-    )
-
 # -------------------
 # Display Chat History
 # -------------------
@@ -124,24 +97,10 @@ if uploaded_files:
 for message in st.session_state.messages:
 
     with st.chat_message(message["role"]):
-        st.write(message["content"])
 
-# -------------------
-# Voice Recorder
-# -------------------
-
-if st.session_state.pdf_loaded:
-
-    st.subheader("🎤 Voice Question")
-
-    audio = mic_recorder(
-        start_prompt="🎤 Start Recording",
-        stop_prompt="⏹ Stop Recording",
-        just_once=True
-    )
-
-    if audio:
-        st.success("🎤 Voice recorded successfully!")
+        st.write(
+            message["content"]
+        )
 
 # -------------------
 # Chat
@@ -150,7 +109,7 @@ if st.session_state.pdf_loaded:
 if st.session_state.pdf_loaded:
 
     question = st.chat_input(
-        "Ask a question about the PDFs..."
+        "Ask a question about the PDF..."
     )
 
     if question:
@@ -171,18 +130,9 @@ if st.session_state.pdf_loaded:
                 {
                     "role": "system",
                     "content": f"""
-You are an AI PDF Assistant.
+You are an AI PDF assistant.
 
-Use ONLY the information contained in the uploaded PDF documents.
-
-Rules:
-1. Do not invent facts.
-2. If information is missing, say:
-   "I could not find that information in the uploaded documents."
-3. Provide concise and accurate answers.
-4. If multiple PDFs contain relevant information,
-   compare and combine them.
-5. Ask for clarification if needed.
+Answer ONLY using the PDF content below.
 
 PDF CONTENT:
 
@@ -218,7 +168,7 @@ PDF CONTENT:
             st.write(answer)
 
 # -------------------
-# Sidebar Actions
+# Clear Chat
 # -------------------
 
 st.sidebar.markdown("---")
