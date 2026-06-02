@@ -25,12 +25,16 @@ st.set_page_config(
 )
 
 st.title("📄 AI PDF Assistant")
-st.markdown(
-    """
-Upload one or more PDFs, ask questions,
-compare documents, and chat with your files.
-"""
-)
+st.caption("Upload one or more PDFs and chat with them.")
+
+with st.expander("🚀 Features"):
+    st.markdown("""
+    - Chat with multiple PDFs
+    - Chat history
+    - PDF chunking
+    - Voice recording
+    - OpenRouter AI integration
+    """)
 
 # -------------------
 # Session State
@@ -139,9 +143,8 @@ if st.session_state.pdf_loaded:
         stop_prompt="⏹ Stop Recording",
         just_once=True
     )
-
     if audio:
-        st.success("🎤 Voice recorded successfully!")
+       st.success("🎤 Voice recorded successfully!")
 
 # -------------------
 # Chat
