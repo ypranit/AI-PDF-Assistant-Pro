@@ -1,7 +1,9 @@
 # 📄 AI PDF Assistant Pro
 
 An advanced AI-powered PDF research assistant that allows users to upload multiple PDF documents, ask questions, generate summaries, compare documents, and retrieve information using Retrieval Augmented Generation (RAG).
+## 📷 Demo
 
+Screenshots and live demo will be added in future updates.
 ---
 
 ## 🚀 Features
