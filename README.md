@@ -1,53 +1,107 @@
-# 📄 AI PDF Chatbot
-## Live Demo
+# 📄 AI PDF Assistant Pro
 
-https://your-app.streamlit.app
+An advanced AI-powered PDF research assistant that allows users to upload multiple PDF documents, ask questions, generate summaries, compare documents, and retrieve information using Retrieval Augmented Generation (RAG).
+## 📷 Demo
 
-An AI-powered PDF chatbot that lets users upload PDF documents and ask questions in natural language.
+Screenshots and live demo will be added in future updates.
+---
 
-Built with Python, Streamlit, OpenRouter, and PyPDF.
+## 🚀 Features
 
-## Features
+### 📚 Multi PDF Support
 
-* Upload PDF documents
-* Extract text automatically
-* Ask questions about uploaded PDFs
-* AI-generated answers using OpenRouter
-* Clean Streamlit interface
-* Chat history support
+Upload and analyze multiple PDF documents simultaneously.
 
-## Tech Stack
+### 🧠 RAG Search
+
+Uses ChromaDB and Sentence Transformers to retrieve the most relevant document chunks before generating answers.
+
+### 💬 AI Chat
+
+Ask questions about your uploaded PDFs and receive intelligent responses powered by OpenRouter.
+
+### 📄 Executive Summaries
+
+Generate concise summaries of entire documents.
+
+### 📊 Document Comparison
+
+Compare multiple PDFs and identify similarities, differences, and unique information.
+
+### 🔍 Source Viewer
+
+Inspect the document chunks used to generate answers.
+
+### 🎤 Voice Recorder UI
+
+Integrated voice recording interface for future speech-to-text support.
+
+### 📈 Dashboard Metrics
+
+Track uploaded PDFs, pages, chunks, and document size.
+
+---
+
+## 🛠 Tech Stack
 
 * Python
 * Streamlit
-* OpenRouter API
+* OpenRouter
+* ChromaDB
+* LangChain
+* Sentence Transformers
 * PyPDF
-* Python Dotenv
+* HuggingFace Embeddings
 
-## Installation
+---
+
+## 📷 Screenshots
+
+Add screenshots of:
+
+* Dashboard
+* PDF Upload
+* Chat Interface
+* RAG Search Results
+
+---
+
+## ⚡ Installation
 
 ```bash
+git clone https://github.com/yourusername/AI-PDF-Assistant-Pro.git
+
+cd AI-PDF-Assistant-Pro
+
 pip install -r requirements.txt
-python -m streamlit run app.py
+
+streamlit run app.py
 ```
 
-## Usage
+---
 
-1. Launch the application.
-2. Upload a PDF document.
-3. Ask questions about the content.
-4. Receive AI-generated responses based on the document.
+## 🔑 Environment Variables
 
-## Future Improvements
+Create a `.env` file:
 
-* Multi-PDF support
-* Semantic search
-* Vector database integration
-* Source citations
-* Voice interaction
+```env
+OPENROUTER_API_KEY=your_api_key_here
+```
 
-## Author
+---
 
-Pranit
+## 🎯 Future Improvements
 
-Part of the AI Automation Journey project series.
+* Speech-to-Text Integration
+* PDF Preview
+* User Authentication
+* Conversation Memory
+* Cloud Database Support
+* Citation-Based Answers
+* File Management System
+
+---
+
+## 👨‍💻 Author
+
+Built by Pranit as part of an AI Automation & Generative AI learning journey.

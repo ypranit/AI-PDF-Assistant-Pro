@@ -4,12 +4,19 @@ import streamlit as st
 from dotenv import load_dotenv
 from pypdf import PdfReader
 from openai import OpenAI
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from streamlit_mic_recorder import mic_recorder
 
-# -------------------
-# Config
-# -------------------
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+try:
+    from streamlit_mic_recorder import mic_recorder
+    VOICE_AVAILABLE = True
+except:
+    VOICE_AVAILABLE = False
+
+# -----------------------
+# CONFIG
+# -----------------------
 
 load_dotenv()
 
@@ -19,32 +26,86 @@ client = OpenAI(
 )
 
 st.set_page_config(
-    page_title="AI PDF Assistant",
+    page_title="AI PDF Assistant Pro",
     page_icon="📄",
     layout="wide"
 )
 
-st.title("📄 AI PDF Assistant")
-st.caption("Upload one or more PDFs and chat with them.")
+# -----------------------
+# MODERN CSS
+# -----------------------
 
-with st.expander("🚀 Features"):
-    st.markdown("""
-    - Chat with multiple PDFs
-    - Chat history
-    - PDF chunking
-    - Voice recording
-    - OpenRouter AI integration
-    """)
+st.markdown("""
+<style>
 
-# -------------------
-# Session State
-# -------------------
+.block-container {
+    max-width: 1300px;
+}
 
-if "pdf_text" not in st.session_state:
-    st.session_state.pdf_text = ""
+.stButton button {
+    width:100%;
+    border-radius:14px;
+    height:55px;
+    font-weight:bold;
+}
+
+.stChatMessage {
+    border-radius:18px;
+    padding:10px;
+}
+
+[data-testid="stSidebar"]{
+    background:#111827;
+}
+
+div[data-testid="metric-container"]{
+    background:#1e293b;
+    padding:15px;
+    border-radius:15px;
+    border:1px solid #334155;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# -----------------------
+# HEADER
+# -----------------------
+
+st.markdown("""
+<div style="
+padding:40px;
+border-radius:25px;
+background:linear-gradient(135deg,#2563eb,#7c3aed,#ec4899);
+text-align:center;
+margin-bottom:25px;
+box-shadow:0 10px 30px rgba(0,0,0,0.3);
+">
+
+<h1 style="color:white;font-size:48px;">
+📄 AI PDF Assistant Pro
+</h1>
+
+<h3 style="color:white;">
+Your Personal AI Research Assistant
+</h3>
+
+<p style="color:white;font-size:18px;">
+Upload PDFs • Search • Compare • Summarize • AI Powered
+</p>
+
+</div>
+""", unsafe_allow_html=True)
+
+# -----------------------
+# SESSION STATE
+# -----------------------
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+if "db" not in st.session_state:
+    st.session_state.db = None
 
 if "pdf_loaded" not in st.session_state:
     st.session_state.pdf_loaded = False
@@ -52,9 +113,9 @@ if "pdf_loaded" not in st.session_state:
 if "chunks" not in st.session_state:
     st.session_state.chunks = []
 
-# -------------------
-# Upload PDFs
-# -------------------
+# -----------------------
+# PDF UPLOAD
+# -----------------------
 
 uploaded_files = st.file_uploader(
     "Upload PDFs",
@@ -65,17 +126,16 @@ uploaded_files = st.file_uploader(
 if uploaded_files:
 
     text = ""
-    total_pages = 0
 
-    st.sidebar.header("📄 Uploaded PDFs")
+    total_pages = 0
+    total_size = 0
 
     for uploaded_file in uploaded_files:
 
         pdf = PdfReader(uploaded_file)
 
         total_pages += len(pdf.pages)
-
-        st.sidebar.write(f"📄 {uploaded_file.name}")
+        total_size += uploaded_file.size
 
         for page in pdf.pages:
 
@@ -84,76 +144,196 @@ if uploaded_files:
             if page_text:
                 text += "\n\n" + page_text
 
-    # Chunking
+    with st.spinner("Building knowledge base..."):
 
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
-    )
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200
+        )
 
-    chunks = splitter.split_text(text)
+        chunks = splitter.split_text(text)
 
-    st.session_state.pdf_text = text
-    st.session_state.chunks = chunks
-    st.session_state.pdf_loaded = True
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        )
+
+        db = FAISS.from_texts(
+            chunks,
+            embeddings
+        )
+
+        st.session_state.db = db
+        st.session_state.chunks = chunks
+        st.session_state.pdf_loaded = True
 
     st.success(
-        f"✅ {len(uploaded_files)} PDF(s) Loaded Successfully"
+        f"Loaded {len(uploaded_files)} PDF(s)"
     )
 
-    st.sidebar.markdown("---")
+    # Dashboard
 
-    st.sidebar.success("🚀 Assistant Ready")
+    col1, col2, col3, col4 = st.columns(4)
 
-    st.sidebar.write(
-        f"**Total PDFs:** {len(uploaded_files)}"
-    )
+    with col1:
+        st.metric(
+            "PDFs",
+            len(uploaded_files)
+        )
 
-    st.sidebar.write(
-        f"**Total Pages:** {total_pages}"
-    )
+    with col2:
+        st.metric(
+            "Pages",
+            total_pages
+        )
 
-    st.sidebar.write(
-        f"**Chunks Created:** {len(chunks)}"
-    )
+    with col3:
+        st.metric(
+            "Chunks",
+            len(chunks)
+        )
 
-    st.sidebar.write(
-        f"**Characters Loaded:** {len(text):,}"
-    )
+    with col4:
+        st.metric(
+            "Size MB",
+            round(total_size / 1024 / 1024, 2)
+        )
+    st.subheader("💡 Suggested Questions")
 
-# -------------------
-# Display Chat History
-# -------------------
+    s1,s2,s3,s4 = st.columns(4)
+
+    with s1:
+         st.info("📄 Summarize all PDFs")
+
+    with s2:
+         st.info("🧠 Extract Insights")
+
+    with s3:
+         st.info("📊 Compare Documents")
+
+    with s4:
+         st.info("🎯 Main Conclusions") 
+
+# -----------------------
+# CHAT HISTORY
+# -----------------------
 
 for message in st.session_state.messages:
 
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
+    with st.chat_message(
+        message["role"]
+    ):
+        st.write(
+            message["content"]
+        )
 
-# -------------------
-# Voice Recorder
-# -------------------
+# -----------------------
+# CHAT
+# ------e-----------------
 
-if st.session_state.pdf_loaded:
+if VOICE_AVAILABLE:
 
-    st.subheader("🎤 Voice Question")
+    st.subheader("🎤 Voice Assistant")
 
     audio = mic_recorder(
         start_prompt="🎤 Start Recording",
         stop_prompt="⏹ Stop Recording",
         just_once=True
     )
-    if audio:
-       st.success("🎤 Voice recorded successfully!")
 
-# -------------------
-# Chat
-# -------------------
+    if audio:
+        st.success("🎤 Voice recorded successfully")
+
+else:
+
+    st.info(
+        "🎤 Voice feature unavailable in cloud deployment."
+    )
+
+# CHAT BUTTONS
 
 if st.session_state.pdf_loaded:
 
-    question = st.chat_input(
-        "Ask a question about the PDFs..."
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    quick_question = None
+
+    with col1:
+
+        if st.button("📄 Summarize"):
+
+            quick_question = """
+Create an executive summary.
+
+Include:
+- Main topics
+- Findings
+- Conclusions
+- Action items
+"""
+
+    with col2:
+
+        if st.button("🧠 Key Points"):
+
+            quick_question = """
+Extract the most important insights.
+
+Rank them by importance.
+
+Use bullet points.
+"""
+
+    with col3:
+
+        if st.button("📊 Compare"):
+
+            quick_question = """
+Compare all uploaded PDFs.
+
+Show:
+- Similarities
+- Differences
+- Unique information
+- Final assessment
+"""
+
+    with col4:
+
+        if st.button("📝 Quiz"):
+
+            quick_question = """
+Create a quiz from the uploaded PDFs.
+
+Generate:
+- 10 Multiple Choice Questions
+- Include 4 options
+- Mark the correct answer
+- Cover important concepts
+"""
+
+    with col5:
+
+        if st.button("🎴 Flashcards"):
+
+            quick_question = """
+Create study flashcards from the uploaded PDFs.
+
+Format:
+
+Q: Question
+A: Answer
+
+Generate at least 15 flashcards.
+"""
+
+    user_input = st.chat_input(
+        "Ask anything about your PDFs..."
+    )
+
+    question = (
+        user_input
+        if user_input
+        else quick_question
     )
 
     if question:
@@ -168,28 +348,57 @@ if st.session_state.pdf_loaded:
         with st.chat_message("user"):
             st.write(question)
 
-        with st.spinner("Thinking..."):
+        docs = st.session_state.db.similarity_search(
+            question,
+            k=4
+        )
+
+        context = "\n\n".join(
+            [
+                doc.page_content
+                for doc in docs
+            ]
+        )
+
+        with st.expander(
+            "📄 Retrieved Context"
+        ):
+
+            for i, doc in enumerate(docs):
+
+                st.markdown(
+                    f"### Chunk {i+1}"
+                )
+
+                st.write(
+                    doc.page_content[:500]
+                )
+
+        with st.spinner(
+            "Thinking..."
+        ):
 
             conversation = [
                 {
-                    "role": "system",
-                    "content": f"""
-You are an AI PDF Assistant.
+                    "role":"system",
+                    "content":f"""
+You are AI PDF Assistant Pro.
 
-Use ONLY the information contained in the uploaded PDF documents.
+Use ONLY the provided document context.
 
 Rules:
-1. Do not invent facts.
-2. If information is missing, say:
-   "I could not find that information in the uploaded documents."
-3. Provide concise and accurate answers.
-4. If multiple PDFs contain relevant information,
-   compare and combine them.
-5. Ask for clarification if needed.
 
-PDF CONTENT:
+- Never hallucinate.
+- Never use outside knowledge.
+- If information is unavailable, clearly say so.
+- Use bullet points whenever possible.
+- Use headings.
+- Be concise and professional.
+- Think like a research analyst.
 
-{st.session_state.pdf_text[:15000]}
+Document Context:
+
+{context}
 """
                 }
             ]
@@ -212,22 +421,59 @@ PDF CONTENT:
 
         st.session_state.messages.append(
             {
-                "role": "assistant",
-                "content": answer
+                "role":"assistant",
+                "content":answer
             }
         )
 
-        with st.chat_message("assistant"):
+        with st.chat_message(
+            "assistant"
+        ):
             st.write(answer)
 
-# -------------------
-# Sidebar Actions
-# -------------------
+# -----------------------
+# SIDEBAR
+# -----------------------
 
-st.sidebar.markdown("---")
+st.sidebar.title("🚀 Control Center")
 
-if st.sidebar.button("🗑 Clear Chat"):
+st.sidebar.success("🟢 AI Online")
 
-    st.session_state.messages = []
+st.sidebar.markdown("""
+### Features
 
-    st.rerun()
+📚 Multi PDF Upload
+
+🧠 RAG Search
+
+📄 Summaries
+
+📊 Document Comparison
+
+🔍 Source Viewer
+
+🎤 Voice Assistant
+
+---
+
+### Example Questions
+
+• Summarize this document
+
+• What are the key findings?
+
+• Compare all PDFs
+
+• What conclusions are mentioned?
+""")
+
+st.sidebar.write(
+    f"💬 Messages: {len(st.session_state.messages)}"
+)
+
+if st.sidebar.button(
+    "🗑 Clear Chat"
+):
+
+ st.session_state.messages = []
+ st.rerun()
