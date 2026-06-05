@@ -6,7 +6,7 @@ Upload your PDFs, ask questions, generate summaries, extract insights, create qu
 
 🌐 **Live Demo:** [ https://ai-pdf-assistant-pro-isonthewayofworking.streamlit.app/ ]
 
-💻 **GitHub Repository:** [  ]
+💻 **GitHub Repository:** [ https://github.com/ypranit/AI-PDF-Assistant-Pro ]
 
 ---
 
