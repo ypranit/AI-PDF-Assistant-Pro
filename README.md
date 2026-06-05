@@ -108,8 +108,8 @@ It's about understanding data, retrieval, embeddings, vector databases, deployme
 
 ## 🔗 Connect With Me
 
-💻 GitHub: YOUR_GITHUB
+💻 GitHub: https://github.com/ypranit/AI-PDF-Assistant-Pro/tree/main
 
-💼 LinkedIn: YOUR_LINKEDIN
+💼 LinkedIn: https://www.linkedin.com/in/y-pranit-899a01338/
 
-𝕏 X: YOUR_X
+𝕏 X:  https://x.com/Y_pranit
